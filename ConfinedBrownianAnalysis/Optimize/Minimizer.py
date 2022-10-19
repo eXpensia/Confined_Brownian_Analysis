@@ -45,7 +45,7 @@ class Minimizer:
 
     ### Getter and setters
 
-    @parameter
+    @property
     def range_Feq(self):
         return self._range_Feq
 
@@ -56,7 +56,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def Model(self):
         return self._Model
 
@@ -66,7 +66,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def analysis(self):
         return self._analysis
 
@@ -87,7 +87,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def range_plateau_MSD(self):
         return self._range_plateau_MSD
 
@@ -98,7 +98,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def range_C4_short(self):
         return self._range_C4_short
 
@@ -109,7 +109,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def range_plateau_MSD(self):
         return self._range_plateau_MSD
 
@@ -120,7 +120,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def range_diffusion(self):
         return self._range_diffusion
 
@@ -131,7 +131,7 @@ class Minimizer:
 
     ###
 
-    @parameter
+    @property
     def range_Peq(self):
         return self._range_Peq
 
@@ -373,40 +373,40 @@ class Minimizer:
         return np.sum((self.F_eq - F_eq_th) ** 2 / F_eq_th**2)
 
 
-class Optimizer(Minimizer):
-    def __init__(
-        self,
-        Model,
-        analysis,
-        self.to_vary = None
-        range_MSD_short=(1e-2, 1),
-        range_plateau_MSD=(1e-2, 1e-1),
-        range_C4_short=(1e-2, 1e-1),
-        range_diffusion=None,
-        range_Peq=None,
-        range_Feq=None,
-    ):
-
-        self.super().__init__(
-            Model,
-            analysis,
-            range_MSD_short=(1e-2, 1),
-            range_plateau_MSD=(1e-2, 1e-1),
-            range_C4_short=(1e-2, 1e-1),
-            range_diffusion=None,
-            range_Peq=None,
-            range_Feq=None,
-        )
-
-        if to_vary == None:
-            self._to_vary = self.available_minimizer
-
-
-
-    @parameter
-    def to_vary(self):
-        return self._to_vary
-
-    @to_vary.setter
-    def to_vary(self, to_vary):
-        self._to_vary = to_vary
+# class Optimizer(Minimizer):
+#     def __init__(
+#         self,
+#         Model,
+#         analysis,
+#         self.to_vary = None
+#         range_MSD_short=(1e-2, 1),
+#         range_plateau_MSD=(1e-2, 1e-1),
+#         range_C4_short=(1e-2, 1e-1),
+#         range_diffusion=None,
+#         range_Peq=None,
+#         range_Feq=None,
+#     ):
+#
+#         self.super().__init__(
+#             Model,
+#             analysis,
+#             range_MSD_short=(1e-2, 1),
+#             range_plateau_MSD=(1e-2, 1e-1),
+#             range_C4_short=(1e-2, 1e-1),
+#             range_diffusion=None,
+#             range_Peq=None,
+#             range_Feq=None,
+#         )
+#
+#         if to_vary == None:
+#             self._to_vary = self.available_minimizer
+#
+#
+#
+#     @property
+#     def to_vary(self):
+#         return self._to_vary
+#
+#     @to_vary.setter
+#     def to_vary(self, to_vary):
+#         self._to_vary = to_vary

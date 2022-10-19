@@ -3,7 +3,7 @@ from typing import Union
 from scipy.io import loadmat
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Dedrift import Dedrift
+from ConfinedBrownianAnalysis.Analyse import Dedrift
 
 
 class Data(np.ndarray):

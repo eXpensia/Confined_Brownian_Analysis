@@ -1,10 +1,10 @@
 import numpy as np
-from StochasticForceInference.fun_SFI import Compute_diffusion
+from ConfinedBrownianAnalysis.Diffusion.fun_SFI import Compute_diffusion
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 
-class Data_analysis:
+class Observables:
     """Class permitting the automatic analysis of Brownian trajectories
     the goal being to extract the non-conservative forces."""
 
@@ -57,147 +57,6 @@ class Data_analysis:
     # the observables when changing the computation variables.
     ###
 
-    @property
-    def MSD_bins(self):
-        return self._MSD_bins
-
-    @MSD_bins.setter
-    def MSD_bins(self, MSD_bins):
-        self._MSD_bins = MSD_bins
-        self._MSD()
-        self._C4()
-
-    ###
-
-    @property
-    def t_LMSD(self):
-        return self._t_LMSD
-
-    @t_LMSD.setter
-    def t_LMSD(self, MSD_bins):
-        self._t_LMSD = t_LMSD
-        self._MSD()
-
-    ###
-
-    @property
-    def range_pdf(self):
-        return self._range_pdf
-
-    @range_pdf.setter
-    def range_pdf(self, range_pdf):
-        self._range_pdf = range_pdf
-        self.PDF_z()
-
-    ###
-
-    @property
-    def num_pdf(self):
-        return self._num_pdf
-
-    @num_pdf.setter
-    def num_pdf(self, num_pdf):
-        self._num_pdf = num_pdf
-        self.PDF_z()
-
-    ###
-
-    @property
-    def range_F_eq(self):
-        return self._range_F_eq
-
-    @range_F_eq.setter
-    def range_F_eq(self, range_F_eq):
-        self._range_F_eq = range_F_eq
-        self.C_F_eq()
-
-    ###
-
-    @property
-    def num_F_eq(self):
-        return self._num_F_eq
-
-    @num_F_eq.setter
-    def num_F_eq(self, num_F_eq):
-        self._num_F_eq = num_F_eq
-        self.C_F_eq()
-
-    ###
-
-    @property
-    def t_sPDF(self):
-        return self._t_sPDF
-
-    @t_sPDF.setter
-    def t_sPDF(self, t_sPDF):
-        self._t_sPDF = t_sPDF
-        self.Short_time_PDF()
-
-    ###
-
-    @property
-    def SPDF_bins(self):
-        return self._SPDF_bins
-
-    @SPDF_bins.setter
-    def SPDF_bins(self, SPDF_bins):
-        self._SPDF_bins = SPDF_bins
-        self.Short_time_PDF()
-
-    ###
-
-    @property
-    def t_Lpdf(self):
-        return self._t_Lpdf
-
-    @t_Lpdf.setter
-    def t_Lpdf(self, t_Lpdf):
-        self._t_Lpdf = t_Lpdf
-        self.Large_Dt_PDF()
-
-    ###
-
-    @property
-    def LPDF_bins(self):
-        return self._LPDF_bins
-
-    @LPDF_bins.setter
-    def LPDF_bins(self, LPDF_bins):
-        self._LPDF_bins = LPDF_bins
-        self.Large_Dt_PDF()
-
-    ###
-
-    @property
-    def N_local_D(self):
-        return self._N_local_D
-
-    @N_local_D.setter
-    def N_local_D(self, N_local_D):
-        self._N_local_D = N_local_D
-        self.local_diffusion()
-
-    ###
-
-    @property
-    def range_D(self):
-        return self._range_D
-
-    @range_D.setter
-    def range_D(self, range_D):
-        self._range_D = range_D
-        self.local_diffusion()
-
-    ###
-
-    @property
-    def ordre_D(self):
-        return self._ordre_D
-
-    @ordre_D.setter
-    def ordre_D(self, ordre_D):
-        self._ordre_D = ordre_D
-        self.local_diffusion()
 
     ######## Methods
 
@@ -209,7 +68,7 @@ class Data_analysis:
         if self.verbose:
             print("Computing MSD")
 
-        self._MSD()
+        self.MSD()
 
         if self.verbose:
             print("Computing long time MSD")
@@ -317,7 +176,7 @@ class Data_analysis:
 
         return MSD
 
-    def _MSD(self) -> dict:
+    def MSD(selfm output=False) -> dict:
         """Actual computation of the MSD"""
 
         self.MSD = {}
@@ -332,7 +191,8 @@ class Data_analysis:
                 print("Computing MSD on " + i)
             self.MSD[i] = self._MSD_1D(self.MSD_t, self.Data[:, n])
 
-        return self.MSD
+        if output:
+            return self.MSD
 
     def _C4_1D(
         self,
@@ -614,3 +474,145 @@ class Data_analysis:
 
         plt.tight_layout()
         plt.show()
+
+    @property
+    def MSD_bins(self):
+        return self._MSD_bins
+
+    @MSD_bins.setter
+    def MSD_bins(self, MSD_bins):
+        self._MSD_bins = MSD_bins
+        self._MSD()
+        self._C4()
+
+    ###
+
+    @property
+    def t_LMSD(self):
+        return self._t_LMSD
+
+    @t_LMSD.setter
+    def t_LMSD(self, MSD_bins):
+        self._t_LMSD = t_LMSD
+        self._MSD()
+
+    ###
+
+    @property
+    def range_pdf(self):
+        return self._range_pdf
+
+    @range_pdf.setter
+    def range_pdf(self, range_pdf):
+        self._range_pdf = range_pdf
+        self.PDF_z()
+
+    ###
+
+    @property
+    def num_pdf(self):
+        return self._num_pdf
+
+    @num_pdf.setter
+    def num_pdf(self, num_pdf):
+        self._num_pdf = num_pdf
+        self.PDF_z()
+
+    ###
+
+    @property
+    def range_F_eq(self):
+        return self._range_F_eq
+
+    @range_F_eq.setter
+    def range_F_eq(self, range_F_eq):
+        self._range_F_eq = range_F_eq
+        self.C_F_eq()
+
+    ###
+
+    @property
+    def num_F_eq(self):
+        return self._num_F_eq
+
+    @num_F_eq.setter
+    def num_F_eq(self, num_F_eq):
+        self._num_F_eq = num_F_eq
+        self.C_F_eq()
+
+    ###
+
+    @property
+    def t_sPDF(self):
+        return self._t_sPDF
+
+    @t_sPDF.setter
+    def t_sPDF(self, t_sPDF):
+        self._t_sPDF = t_sPDF
+        self.Short_time_PDF()
+
+    ###
+
+    @property
+    def SPDF_bins(self):
+        return self._SPDF_bins
+
+    @SPDF_bins.setter
+    def SPDF_bins(self, SPDF_bins):
+        self._SPDF_bins = SPDF_bins
+        self.Short_time_PDF()
+
+    ###
+
+    @property
+    def t_Lpdf(self):
+        return self._t_Lpdf
+
+    @t_Lpdf.setter
+    def t_Lpdf(self, t_Lpdf):
+        self._t_Lpdf = t_Lpdf
+        self.Large_Dt_PDF()
+
+    ###
+
+    @property
+    def LPDF_bins(self):
+        return self._LPDF_bins
+
+    @LPDF_bins.setter
+    def LPDF_bins(self, LPDF_bins):
+        self._LPDF_bins = LPDF_bins
+        self.Large_Dt_PDF()
+
+    ###
+
+    @property
+    def N_local_D(self):
+        return self._N_local_D
+
+    @N_local_D.setter
+    def N_local_D(self, N_local_D):
+        self._N_local_D = N_local_D
+        self.local_diffusion()
+
+    ###
+
+    @property
+    def range_D(self):
+        return self._range_D
+
+    @range_D.setter
+    def range_D(self, range_D):
+        self._range_D = range_D
+        self.local_diffusion()
+
+    ###
+
+    @property
+    def ordre_D(self):
+        return self._ordre_D
+
+    @ordre_D.setter
+    def ordre_D(self, ordre_D):
+        self._ordre_D = ordre_D
+        self.local_diffusion()
