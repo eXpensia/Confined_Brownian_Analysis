@@ -24,6 +24,7 @@ class Observables:
         range_D: (float, float) = (1e-9, 2e-6),  # range of computation of Ronceray
         N_local_D: int = 200,  # number of points for the diffusion computation
         ordre_D: int = 3,  # Ronceray polynomial order
+        ordre_D_z: int = None, # Roncerau polynamial order for z (if we want a different than for x)
         LPDF_bins: int = 50,  # number of bins in the long time PDF
         Do=4e-21 / (6 * np.pi * 0.001 * 1.50e-6),
     ):
@@ -33,6 +34,10 @@ class Observables:
         self.axis = ["x", "y", "z"]
         if np.max(self.Data[:]) > 1:
             self.Data *= 1e-6  # Putting everything in microns.
+
+        if ordre_D_z == None:
+            ordre_D_z = ordre_D
+
 
         self._MSD_bins = MSD_bins
         self._t_LMSD = t_LMSD
@@ -45,6 +50,7 @@ class Observables:
         self._N_local_D = N_local_D
         self._range_D = range_D
         self._ordre_D = ordre_D
+        self._ordre_D_z = ordre_D_z
 
         self._range_F_eq = range_F_eq
         self._num_F_eq = num_F_eq
@@ -52,10 +58,6 @@ class Observables:
         self.verbose = verbose
         self.Do = Do
 
-    ### Getters and setters ###
-    # The point of the getters and setters is to compute automatically
-    # the observables when changing the computation variables.
-    ###
 
 
     ######## Methods
@@ -68,7 +70,7 @@ class Observables:
         if self.verbose:
             print("Computing MSD")
 
-        self.MSD()
+        self.C_MSD()
 
         if self.verbose:
             print("Computing long time MSD")
@@ -176,7 +178,7 @@ class Observables:
 
         return MSD
 
-    def MSD(selfm output=False) -> dict:
+    def C_MSD(self, output=False) -> dict:
         """Actual computation of the MSD"""
 
         self.MSD = {}
@@ -324,9 +326,23 @@ class Observables:
         pos[:, 1] = self.Data.y
         pos[:, 2] = self.Data.z
 
-        self.Dx, self.Dy, self.Dz, self.z_D = Compute_diffusion(
-            pos, self.Data.dt, *self.range_D, N=self.N_local_D, ordre=self.ordre_D
-        )
+
+
+        if self.ordre_D == self.ordre_D_z:
+
+            self.Dx, self.Dy, self.Dz, self.z_D = Compute_diffusion(
+                pos, self.Data.dt, *self.range_D, N=self.N_local_D, ordre=self.ordre_D
+            )
+
+        else:
+
+            self.Dx, self.Dy, _, self.z_D = Compute_diffusion(
+                pos, self.Data.dt, *self.range_D, N=self.N_local_D, ordre=self.ordre_D
+            )
+
+            _, _, self.Dz, self.z_D = Compute_diffusion(
+                pos, self.Data.dt, *self.range_D, N=self.N_local_D, ordre=self.ordre_D_z
+            )
 
     def plot(self, info: str, ax=None):
         """Simplifying all the plots."""
@@ -475,6 +491,11 @@ class Observables:
         plt.tight_layout()
         plt.show()
 
+    ### Getters and setters ###
+    # The point of the getters and setters is to compute automatically
+    # the observables when changing the computation variables.
+    ###
+
     @property
     def MSD_bins(self):
         return self._MSD_bins
@@ -615,4 +636,12 @@ class Observables:
     @ordre_D.setter
     def ordre_D(self, ordre_D):
         self._ordre_D = ordre_D
+        self.local_diffusion()
+
+    def ordre_D_z(self):
+        return self._ordre_D
+
+    @ordre_D_z.setter
+    def ordre_D_z(self, ordre_D_z):
+        self._ordre_D = ordre_D_z
         self.local_diffusion()

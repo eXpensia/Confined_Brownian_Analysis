@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Minimizer:
     def __init__(
         self,
