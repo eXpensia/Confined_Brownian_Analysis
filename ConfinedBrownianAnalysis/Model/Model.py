@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from numpy import trapz
 
 class Model:
     def __init__(
@@ -30,7 +30,7 @@ class Model:
 
     def P_0(self, z, normalize=True):
 
-        P = np.exp(-self.B * np.exp(-z / self.ld) - z / self.lB)
+        P = np.exp(-self.B * np.exp(-z / self.lD) - z / self.lB)
         P[z < 0] = 0
 
         if normalize:
@@ -42,7 +42,7 @@ class Model:
     def P_0_off(self, z):
 
         z = z - self.z_0
-        P = np.exp(-self.B * np.exp(-z / self.ld) - z / self.lB)
+        P = np.exp(-self.B * np.exp(-z / self.lD) - z / self.lB)
 
         if type(z) == float:
             if z < self.z_0:
@@ -112,9 +112,10 @@ class Model:
 
         z = self.z_th
 
-        P_long = lambda DZ: self.P_0(z, normalize=False) * self.P_0(
-            z + DZ, normalize=False
-        )
+        def P_long(Dz):
+            dp = self.P_0(z, normalize=False) * self.P_0(z + Dz, normalize=False)
+            P = trapz(dp, z)
+            return P
 
         if type(Dz) == float:
             return P_long(Dz)

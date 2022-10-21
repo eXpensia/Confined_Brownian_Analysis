@@ -12,6 +12,7 @@ setup(
         'scipy==1.9.2',
         'seaborn==0.11',
         'tqdm==4.64.1',
+        'dill==0.3.5.1'
     ],
     packages=[
         'ConfinedBrownianAnalysis',

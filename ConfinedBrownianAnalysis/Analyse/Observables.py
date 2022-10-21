@@ -2,7 +2,8 @@ import numpy as np
 from ConfinedBrownianAnalysis.Diffusion.fun_SFI import Compute_diffusion
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
+import dill as pickle
+from ConfinedBrownianAnalysis.io import Data
 
 class Observables:
     """Class permitting the automatic analysis of Brownian trajectories
@@ -24,7 +25,7 @@ class Observables:
         range_D: (float, float) = (1e-9, 2e-6),  # range of computation of Ronceray
         N_local_D: int = 200,  # number of points for the diffusion computation
         ordre_D: int = 3,  # Ronceray polynomial order
-        ordre_D_z: int = None, # Roncerau polynamial order for z (if we want a different than for x)
+        ordre_D_z: int = None,  # Roncerau polynamial order for z (if we want a different than for x)
         LPDF_bins: int = 50,  # number of bins in the long time PDF
         Do=4e-21 / (6 * np.pi * 0.001 * 1.50e-6),
     ):
@@ -37,7 +38,6 @@ class Observables:
 
         if ordre_D_z == None:
             ordre_D_z = ordre_D
-
 
         self._MSD_bins = MSD_bins
         self._t_LMSD = t_LMSD
@@ -57,8 +57,6 @@ class Observables:
 
         self.verbose = verbose
         self.Do = Do
-
-
 
     ######## Methods
 
@@ -326,8 +324,6 @@ class Observables:
         pos[:, 1] = self.Data.y
         pos[:, 2] = self.Data.z
 
-
-
         if self.ordre_D == self.ordre_D_z:
 
             self.Dx, self.Dy, self.Dz, self.z_D = Compute_diffusion(
@@ -491,6 +487,12 @@ class Observables:
         plt.tight_layout()
         plt.show()
 
+    ### saving Function
+
+    def save(self, filename):
+        with open(filename, "wb") as handle:
+            b = pickle.dump(self, handle,  recurse=True)
+
     ### Getters and setters ###
     # The point of the getters and setters is to compute automatically
     # the observables when changing the computation variables.
@@ -638,6 +640,7 @@ class Observables:
         self._ordre_D = ordre_D
         self.local_diffusion()
 
+    @property
     def ordre_D_z(self):
         return self._ordre_D
 
