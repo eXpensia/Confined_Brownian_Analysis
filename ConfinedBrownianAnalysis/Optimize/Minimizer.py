@@ -14,7 +14,12 @@ class Minimizer:
         range_Peq=None,
         range_Feq=None,
         to_compute= "all",
+        method = "sum"
     ):
+
+        self.all_method = ["sum", "mean"]
+        self._method = method
+        self.set_method()
 
         self._Model = Model
         self._analysis = analysis
@@ -65,6 +70,14 @@ class Minimizer:
 
 
 
+    def set_method(self):
+        if self.method not in self.all_method:
+            raise ValueError("Please select a method in " + str(all_method) + ".")
+        match self.method:
+            case "sum":
+                self.func = np.nansum
+            case "mean":
+                self.func = np.nanmean
 
     ### Gather experimental points
 
@@ -192,7 +205,7 @@ class Minimizer:
 
         # Compute the squared relative error and return it
 
-        return np.sum((self.MSD_short_exp - MSD_th) ** 2 / MSD_th**2)
+        return self.func((self.MSD_short_exp - MSD_th) ** 2 / MSD_th**2)
 
     def minimizer_C4_short_time(self):
         """
@@ -209,7 +222,7 @@ class Minimizer:
 
         # Compute the squared relative error and return it
 
-        return np.sum((self.C4_short_exp - C4_th) ** 2 / C4_th**2)
+        return self.func((self.C4_short_exp - C4_th) ** 2 / C4_th**2)
 
     def minimizer_plateau_MSD(self):
         """
@@ -218,7 +231,7 @@ class Minimizer:
         """
         plateau_th = np.array([self.Model.plateau_MSD()] * len(self.plateau_exp))
 
-        return np.sum((self.plateau_exp - plateau_th) ** 2 / plateau_th)
+        return self.func((self.plateau_exp - plateau_th) ** 2 / plateau_th)
 
     def minimizer_plateau_C4(self):
         """
@@ -227,7 +240,7 @@ class Minimizer:
         """
         plateau_th = np.array([self.Model.plateau_C4()] * len(self.plateau_C4_exp))
 
-        return np.sum((self.plateau_C4_exp - plateau_th) ** 2 / plateau_th)
+        return self.func((self.plateau_C4_exp - plateau_th) ** 2 / plateau_th)
 
     def minimizer_diffusion(self):
         """
@@ -246,7 +259,7 @@ class Minimizer:
 
         # Compute the squared relative error
 
-        return np.sum((self.Diffusion - Diffusion_th) ** 2 / Diffusion_th**2)
+        return self.func((self.Diffusion - Diffusion_th) ** 2 / Diffusion_th**2)
 
     def minimizer_Peq(self):
         """
@@ -261,7 +274,7 @@ class Minimizer:
 
         # Compute the squared relative errorbar
 
-        return np.sum((self.P_eq - P_eq_th) ** 2 / P_eq_th**2)
+        return self.func((self.P_eq - P_eq_th) ** 2 / P_eq_th**2)
 
     def minimizer_long_time_PDF(self):
         """
@@ -282,7 +295,7 @@ class Minimizer:
 
         # Retrieve computation time
         keys = self.analysis.short_time_PDF_Dx.keys()
-        err = 0
+        err = []
 
         # Computing each relative error for each time
         for i in keys:
@@ -295,11 +308,12 @@ class Minimizer:
             pdf_y_th = self.Model.P_D_short_time(dict_pdf_y["bin_center"], dt, axis="x")
             pdf_z_th = self.Model.P_D_short_time(dict_pdf_z["bin_center"], dt, axis="z")
 
-            err +=np.sum((dict_pdf_x["PDF"] - pdf_x_th) ** 2 / pdf_x_th)
-            err +=np.sum((dict_pdf_x["PDF"] - pdf_z_th) ** 2 / pdf_z_th)
-            err +=np.sum((dict_pdf_x["PDF"] - pdf_y_th) ** 2 / pdf_y_th)
-
-        return err
+            err.append(self.func((dict_pdf_x["PDF"] - pdf_x_th) ** 2 / pdf_x_th**2))
+            err.append(self.func((dict_pdf_x["PDF"] - pdf_z_th) ** 2 / pdf_z_th**2))
+            err.append(self.func((dict_pdf_x["PDF"] - pdf_y_th) ** 2 / pdf_y_th**2))
+        err = np.array(err)
+        err[err > 2] = 0 ## remove experiment that did not work at all
+        return self.func(err)
 
     def minimizer_F_eq(self):
         """
@@ -314,7 +328,7 @@ class Minimizer:
 
         # Compute the squared relative errorbar
 
-        return np.sum((self.F_eq - F_eq_th) ** 2 / F_eq_th**2)
+        return self.func((self.F_eq - F_eq_th) ** 2 / F_eq_th**2)
 
     ### Getter and setters
 
@@ -412,6 +426,15 @@ class Minimizer:
     def range_Peq(self, range_Peq):
         self._range_Peq = range_Peq
         self._get_Peq()
+
+    @property
+    def method(self):
+        return self._method
+
+    @method.setter
+    def method(self, method):
+        self._method = method
+        self.set_method()
 
 # class Optimizer(Minimizer):
 #     def __init__(

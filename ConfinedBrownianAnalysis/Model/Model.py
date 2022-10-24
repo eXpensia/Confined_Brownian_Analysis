@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy import trapz
 
+
 class Model:
     def __init__(
         self,
@@ -55,44 +56,51 @@ class Model:
 
     def Dz(self, z):
         z = z + self.b
-        return (6 * z**2 + 2 * self.a * z) / (
-            6 * z**2 + 9 * self.a * z + 2 * self.a**2
+        return (
+            (6 * z**2 + 2 * self.a * z)
+            / (6 * z**2 + 9 * self.a * z + 2 * self.a**2)
+            * self.D0
         )
 
     def Dx(self, z):
         z = z + self.b  # + due to usual slippage convention
         xi = self.a / (z + self.a)
-        return 1 - 9 / 16 * xi + 1 / 8 * xi**3 - 45 / 256 * xi**4 - 1 / 16 * xi**5
+        return (
+            1 - 9 / 16 * xi + 1 / 8 * xi**3 - 45 / 256 * xi**4 - 1 / 16 * xi**5
+        ) * self.D0
 
     ## Modified diffusion coefficient function to take into account z_0
 
     def Dz_off(self, z):
         z = z + self.b  # + due to usual slippage convention
         z = z - self.z_0
-        return (6 * z**2 + 2 * self.a * z) / (
-            6 * z**2 + 9 * self.a * z + 2 * self.a**2
+        return (
+            (6 * z**2 + 2 * self.a * z)
+            / (6 * z**2 + 9 * self.a * z + 2 * self.a**2)
+            * self.D0
         )
 
     def Dx_off(self, z):
         z = z + self.b  # + due to usual slippage convention
         z = z - self.z_0
         xi = self.a / (z + self.a)
-        return 1 - 9 / 16 * xi + 1 / 8 * xi**3 - 45 / 256 * xi**4 - 1 / 16 * xi**5
+        return (
+            1 - 9 / 16 * xi + 1 / 8 * xi**3 - 45 / 256 * xi**4 - 1 / 16 * xi**5
+        ) * self.D0
 
     def P_D_short_time(self, Dz, Dt, axis="x"):
 
         z = self.z_th
 
         if axis == "x":
-            D = self.Dx(z) * self.D0
+            D = self.Dx(z)
         else:
-            D = self.Dz(z) * self.D0
+            D = self.Dz(z)
 
-        P_D = D * self.P_0(z)
-        P_D /= np.trapz(P_D, z)
+
 
         P = lambda Dz: np.trapz(
-            P_D / np.sqrt(4 * np.pi * D * Dt) * np.exp(-(Dz**2) / (4 * D * Dt)), D
+            self.P_0(z) / np.sqrt(4 * np.pi * D * Dt) * np.exp(-(Dz**2) / (4 * D * Dt)), z
         )
 
         P_Dz = np.array([P(i) for i in Dz])
@@ -102,9 +110,9 @@ class Model:
         z = self.z_th
 
         if axis == "x":
-            D = self.Dx(z) * self.D0
+            D = self.Dx(z)
         else:
-            D = self.Dz(z) * self.D0
+            D = self.Dz(z)
 
         return np.trapz(self.P_0(z) * D, z)
 
@@ -135,7 +143,7 @@ class Model:
         dz = np.linspace(-5e-6, 5e-6, 10000)
         P_Dz = self.long_time_pdf(dz)
 
-        return np.trapz(dz**4 * P_Dz, dz) ** 2 - 3 * np.trapz(dz**2 * P_Dz, dz) ** 2
+        return np.trapz(dz**4 * P_Dz, dz) - 3 * np.trapz(dz**2 * P_Dz, dz) ** 2
 
     def MSD_short_time(
         self,
