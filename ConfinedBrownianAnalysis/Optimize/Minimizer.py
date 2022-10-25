@@ -1,7 +1,20 @@
 import numpy as np
-
+from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 class Minimizer:
+    """
+    Class to manage the computation and optimization of the minizer using all the different observable.
+
+    You can choose to compute the minimizers that you want by changing the to_compute variable.
+    You can choose the variable to fit by changing the to_vary variable.
+
+    Two different method are implemented to compute the minizer, sum all the chi_2 are
+    average them. The method can be choose by changing the method variable.
+    Note that all method name can be ofund in self.all_method variable.
+    A new method can be implemented by adding the call inside the self.set_method method.
+    """
+
     def __init__(
         self,
         Model,
@@ -13,14 +26,40 @@ class Minimizer:
         range_diffusion=None,
         range_Peq=None,
         range_Feq=None,
-        to_compute= "all",
-        method = "sum"
+        to_vary=["B", "lD", "Drho", "z_0", "b"],
+        to_compute="all",
+        method="sum",
     ):
 
+        self.parameters = [
+            "B",
+            "lD",
+        ]
         self.all_method = ["sum", "mean"]
+
+        self.all_variable = ["B", "lD", "Drho", "z_0", "b", "a", "noise_lvl_MSD", "eta"]
+
+        self.available_minimizer = [
+            "minimizer_MSD_short_time",
+            "minimizer_plateau_MSD",
+            "minimizer_C4_short_time",
+            "minimizer_plateau_C4",
+            "minimizer_diffusion",
+            "minimizer_Peq",
+            "minimizer_long_time_PDF",
+            "minimizer_short_time_PDF",
+            "minimizer_F_eq",
+        ]
+
+        self.not_need_getter = [
+            "minimizer_long_time_PDF",
+            "minimizer_short_time_PDF",
+        ]
+
         self._method = method
         self.set_method()
 
+        self.to_vary = to_vary
         self._Model = Model
         self._analysis = analysis
         self.dt = self.analysis.Data.dt
@@ -42,33 +81,22 @@ class Minimizer:
         else:
             self._range_F_eq = range_Feq
 
-        self.available_minimizer = [
-            "minimizer_MSD_short_time",
-            "minimizer_plateau_MSD",
-            "minimizer_C4_short_time",
-            "minimizer_plateau_C4",
-            "minimizer_diffusion",
-            "minimizer_Peq",
-            "minimizer_long_time_PDF",
-            "minimizer_short_time_PDF",
-            "minimizer_F_eq",]
-
-        self.not_need_getter = [
-            "minimizer_long_time_PDF",
-            "minimizer_short_time_PDF",
-        ]
-
         if to_compute == "all":
             self.to_compute = self.available_minimizer
+        else:
+            for i in to_compute:
+                if i not in self.available_minimizer:
+                    raise ValueError(
+                        "Please select minimizers in " + str(self.available_minimizer)
+                    )
+            self.to_compute = to_compute
 
         for i in self.to_compute:
             if i in self.not_need_getter:
                 continue
             else:
                 fun = "_get_" + i[10:]
-                getattr(self,fun)()
-
-
+                getattr(self, fun)()
 
     def set_method(self):
         if self.method not in self.all_method:
@@ -84,8 +112,12 @@ class Minimizer:
     def _get_MSD_short_time(self):
         # retrive the points over witch we want to fit the MSD
 
-        I1 = int(np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[0])[0])
-        I2 = int(np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[1])[0])
+        I1 = int(
+            np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[0])[0]
+        )
+        I2 = int(
+            np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[1])[0]
+        )
         axis = self.analysis.axis
 
         # retrieve the experimental points
@@ -114,8 +146,12 @@ class Minimizer:
 
     def _get_plateau_MSD(self):
 
-        I1 = int(np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[0])[0])
-        I2 = int(np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[1])[0])
+        I1 = int(
+            np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[0])[0]
+        )
+        I2 = int(
+            np.argwhere(self.analysis.MSD_t * self.dt > self.range_MSD_short[1])[0]
+        )
 
         self.plateau_exp = self.analysis.MSD["z"][I1:I2]
 
@@ -179,7 +215,7 @@ class Minimizer:
         Retrieve the experimental Peq Data points
         """
 
-        if self.range_Feq == self.analysis.range_F_eq or self.range_Feq==None:
+        if self.range_Feq == self.analysis.range_F_eq or self.range_Feq == None:
             z_Feq, Feq = self.analysis.z_F_eq, self.analysis.F_eq
         else:
             I1 = int(np.argwhere(self.analysis.z_F_eq > self.range_Feq[0])[0])
@@ -305,14 +341,15 @@ class Minimizer:
             dict_pdf_z = self.analysis.short_time_PDF_Dz[i]
 
             pdf_x_th = self.Model.P_D_short_time(dict_pdf_x["bin_center"], dt, axis="x")
-            pdf_y_th = self.Model.P_D_short_time(dict_pdf_y["bin_center"], dt, axis="x")
+            pdf_y_th = self.Model.P_D_short_time(dict_pdf_y["bin_center"], dt, axis="y")
             pdf_z_th = self.Model.P_D_short_time(dict_pdf_z["bin_center"], dt, axis="z")
 
             err.append(self.func((dict_pdf_x["PDF"] - pdf_x_th) ** 2 / pdf_x_th**2))
             err.append(self.func((dict_pdf_x["PDF"] - pdf_z_th) ** 2 / pdf_z_th**2))
             err.append(self.func((dict_pdf_x["PDF"] - pdf_y_th) ** 2 / pdf_y_th**2))
+
         err = np.array(err)
-        err[err > 2] = 0 ## remove experiment that did not work at all
+        err[err > 2] = 0  ## remove experiment that did not work at all
         return self.func(err)
 
     def minimizer_F_eq(self):
@@ -329,6 +366,229 @@ class Minimizer:
         # Compute the squared relative errorbar
 
         return self.func((self.F_eq - F_eq_th) ** 2 / F_eq_th**2)
+
+    ### Computing minimizer
+
+    def Compute(self, verbose=False):
+        """
+        Compute the total minimizer.
+        The computed minimizers are stored in self.to_compute.
+        The different output are just
+        """
+        minimizer = 0
+
+        for i in self.to_compute:
+
+            err = getattr(self, i)()
+            if verbose:
+                print(i + " = " + str(err))
+            minimizer += err
+
+        if verbose:
+            print("Total minimizer = " + str(minimizer))
+
+        return minimizer
+
+    def _minimize(self, x):
+        """
+        Actual function to minimize
+        """
+        for n, i in enumerate(self.to_vary):
+            setattr(self.Model, i, x[n])
+
+        return self.Compute()
+
+    def Optimizer(self, kwargs={}):
+        """
+        Find the minimium of the total minimizer by varing the variable listed in self.to_vary
+        Takes the same arguments as scipy.optimize.minimize function.
+        """
+
+        x0 = [getattr(self.Model, i) for i in self.to_vary]
+        self.res = minimize(self._minimize, x0, **kwargs)
+
+        print("done")
+
+    #########   Ploting tools ################
+    def plot(self, info: str, ax=None):
+        """Simplifying all the plots."""
+        info = info.lower()
+        needs_plot = False
+
+        if ax is None:
+            plt.ioff()
+            fig = plt.figure()
+            plt.ion()
+            ax = plt.gca()
+            needs_plot = True
+
+        match info:
+            case "msd":
+                t_exp = self.analysis.MSD_t * self.analysis.Data.dt
+
+                for i in self.analysis.axis:
+
+                    ax.loglog(t_exp, self.analysis.MSD[i], "o", label="$" + i + "$")
+                    ax.plot(t_exp, self.Model.MSD_short_time(t_exp, axis=i), color="k")
+
+                ax.plot(
+                    t_exp[-30:],
+                    [self.Model.plateau_MSD()] * 30,
+                    color="k",
+                    linewidth=5,
+                    alpha=0.5,
+                )
+
+                ax.legend(frameon=False)
+                ax.set(xlabel="$t$ (s)", ylabel="MSD (m$^2$)")
+
+            case "pdf":
+
+                ax.semilogy(self.analysis.z_pdf_z, self.analysis.pdf_z, "o")
+                ax.plot(self.z_Peq, self.Model.P_0_off(self.z_Peq), color="k")
+                ax.set(xlabel="$z$ ($\mu$m)", ylabel="PDF (m$^{-1}$)")
+
+            case "f_eq":
+                ax.semilogx(self.analysis.z_F_eq, self.analysis.F_eq * 1e15, "o")
+                ax.plot(
+                    self.z_Feq, self.Model.Conservative_Force(self.z_Feq) * 1e15, color="k"
+                )
+                ax.set(xlabel="$z$ (m)", ylabel="$F$ (fN)")
+
+            case "c4":
+
+                t_exp = self.analysis.C4_t * self.analysis.Data.dt
+                for i in self.analysis.axis:
+                    ax.loglog(t_exp, self.analysis.C4[i], "o", label="$" + i + "$")
+                    ax.plot(t_exp, self.Model.C4_short_time(t_exp, axis=i), color="k")
+
+                ax.plot(
+                    t_exp[-30:],
+                    [self.Model.plateau_C4()] * 30,
+                    color="k",
+                    linewidth=5,
+                    alpha=0.5,
+                )
+
+                ax.legend(frameon=False)
+                ax.set(xlabel="$t$ (s)", ylabel="C4 (m$^4$)")
+
+            case "short_time_pdf_x":
+
+                I1 = int(self.analysis.t_sPDF[0] * self.analysis.Data.fps)
+                if I1 == 0:
+                    I1 += 1
+                I2 = int(self.analysis.t_sPDF[1] * self.analysis.Data.fps)
+                I = np.arange(I1, I2)
+
+                for i in I:
+                    PDF = self.analysis.short_time_PDF_Dx[str(i)]
+                    dt = float(i) * self.dt
+                    ax.semilogy(
+                        PDF["bin_center"],
+                        PDF["PDF"],
+                        "o",
+                        label="$\Delta t  = " + str(i / self.analysis.Data.fps) + "$ s",
+                    )
+
+                    ax.plot(PDF["bin_center"], self.Model.P_D_short_time(PDF["bin_center"], dt, axis="x"), color = "k")
+                ax.legend(frameon=False)
+                ax.set(xlabel="$\Delta x$ (m)", ylabel="PDF (m$^-1$)")
+            case "short_time_pdf_z":
+
+                I1 = int(self.analysis.t_sPDF[0] * self.analysis.Data.fps)
+                if I1 == 0:
+                    I1 += 1
+                I2 = int(self.analysis.t_sPDF[1] * self.analysis.Data.fps)
+                I = np.arange(I1, I2)
+
+                for i in I:
+                    PDF = self.analysis.short_time_PDF_Dz[str(i)]
+                    dt = float(i) * self.dt
+                    ax.semilogy(
+                        PDF["bin_center"],
+                        PDF["PDF"],
+                        "o",
+                        label="$\Delta t  = " + str(i / self.analysis.Data.fps) + "$ s",
+                    )
+                    ax.plot(PDF["bin_center"], self.Model.P_D_short_time(PDF["bin_center"], dt, axis="z"), color = "k")
+                ax.legend(frameon=False)
+                ax.set(xlabel="$\Delta z$ (m)", ylabel="PDF (m$^-1$)")
+            case "long_time_pdf":
+
+                ax.errorbar(
+                    self.analysis.bins_centers_long_t,
+                    self.analysis.pdf_long_t,
+                    yerr=self.analysis.err_long_t,
+                    fmt="o",
+                    barsabove=False,
+                    linestyle="",
+                    ecolor="k",
+                    capsize=4,
+                )
+                ax.plot(
+                    self.analysis.bins_centers_long_t,
+                    self.Model.long_time_pdf(self.analysis.bins_centers_long_t),
+                    color="k",
+                    zorder=10,
+                )
+
+                ax.semilogy()
+                ax.set(xlabel="$\Delta z$ (m)", ylabel="PDF (m$^-1$)")
+
+            case "local_d":
+                z_D = self.analysis.z_D
+                Dx = self.analysis.Dx
+                Dy = self.analysis.Dy
+                Dz = self.analysis.Dz
+                Do = self.analysis.Do
+                z_exp = self.z_Diffusion
+                ax.loglog(z_D, Dz / Do, "o", label=r"$D_\bot$")
+                ax.plot(z_D, (Dx + Dy) / 2 / Do, "o", label=r"D_\\parallel")
+                ax.plot(z_exp, self.Model.Dx_off(z_exp)/Do, color = "k")
+                ax.plot(z_exp, self.Model.Dz_off(z_exp)/Do, color = "k")
+                ax.legend(frameon=False)
+
+                ax.set(xlabel="$z$ (m)", ylabel="$D/ D_0$ (m$^2$s$^-1$)")
+        if needs_plot:
+            plt.show()
+
+    def plot_result(self):
+        plt.ioff()
+        plt.figure(figsize=(10, 10))
+        plt.ion()
+
+        ### MSD
+
+        ax1 = plt.subplot(421)
+        self.plot("msd", ax1)
+
+        ###
+
+        ax2 = plt.subplot(422)
+        self.plot("C4", ax2)
+
+        ax3 = plt.subplot(423)
+        self.plot("short_time_pdf_x", ax3)
+        ax3.semilogy()
+
+        ax4 = plt.subplot(424)
+        self.plot("short_time_pdf_z", ax4)
+
+        ax5 = plt.subplot(425)
+        self.plot("local_D", ax5)
+
+        ax6 = plt.subplot(426)
+        self.plot("long_time_pdf", ax6)
+
+        ax7 = plt.subplot(427)
+        self.plot("pdf", ax7)
+
+        ax8 = plt.subplot(428)
+        self.plot("F_eq", ax8)
+
+        plt.tight_layout()
+        plt.show()
 
     ### Getter and setters
 
@@ -435,41 +695,3 @@ class Minimizer:
     def method(self, method):
         self._method = method
         self.set_method()
-
-# class Optimizer(Minimizer):
-#     def __init__(
-#         self,
-#         Model,
-#         analysis,
-#         self.to_vary = None
-#         range_MSD_short=(1e-2, 1),
-#         range_plateau_MSD=(1e-2, 1e-1),
-#         range_C4_short=(1e-2, 1e-1),
-#         range_diffusion=None,
-#         range_Peq=None,
-#         range_Feq=None,
-#     ):
-#
-#         self.super().__init__(
-#             Model,
-#             analysis,
-#             range_MSD_short=(1e-2, 1),
-#             range_plateau_MSD=(1e-2, 1e-1),
-#             range_C4_short=(1e-2, 1e-1),
-#             range_diffusion=None,
-#             range_Peq=None,
-#             range_Feq=None,
-#         )
-#
-#         if to_vary == None:
-#             self._to_vary = self.available_minimizer
-#
-#
-#
-#     @property
-#     def to_vary(self):
-#         return self._to_vary
-#
-#     @to_vary.setter
-#     def to_vary(self, to_vary):
-#         self._to_vary = to_vary

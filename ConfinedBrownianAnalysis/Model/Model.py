@@ -11,21 +11,21 @@ class Model:
         a=1.5e-6,
         Drho=50,
         eta=1e-3,
-        z_0=0,
-        b=0,
+        z_0=-1e-9,
+        b=1e-8,
         noise_lvl_MSD=0,
     ):
 
         self.B = B
         self.lD = lD
-        self.a = a
-        self.Drho = Drho
-        self.eta = eta
+        self._a = a
+        self._Drho = Drho
+        self._eta = eta
         self.z_0 = z_0
         self.b = b
         self.noise_lvl_MSD = noise_lvl_MSD
-        self.z_th = np.linspace(1e-9, 16e-6, 10000)
-        self.z_D_th = self.z_th - self.b
+        self.z_th = np.linspace(1e-9, 5e-6, 1000)
+        self.z_D_th = self.z_th + self.b
         self.lB = 4e-21 / (4 / 3 * np.pi * Drho * 9.81 * a**3)
         self.D0 = 4e-21 / (6 * np.pi * eta * a)
 
@@ -92,15 +92,16 @@ class Model:
 
         z = self.z_th
 
-        if axis == "x":
+        if axis == "x" or axis == "y":
             D = self.Dx(z)
         else:
             D = self.Dz(z)
 
-
-
         P = lambda Dz: np.trapz(
-            self.P_0(z) / np.sqrt(4 * np.pi * D * Dt) * np.exp(-(Dz**2) / (4 * D * Dt)), z
+            self.P_0(z)
+            / np.sqrt(4 * np.pi * D * Dt)
+            * np.exp(-(Dz**2) / (4 * D * Dt)),
+            z,
         )
 
         P_Dz = np.array([P(i) for i in Dz])
@@ -109,7 +110,7 @@ class Model:
     def mean_D(self, axis="x"):
         z = self.z_th
 
-        if axis == "x":
+        if axis == "x" or axis == "y":
             D = self.Dx(z)
         else:
             D = self.Dz(z)
@@ -133,14 +134,14 @@ class Model:
 
     def plateau_MSD(self):
 
-        dz = np.linspace(-5e-6, 5e-6, 10000)
+        dz = np.linspace(-5e-6, 5e-6, 1000)
         P_Dz = self.long_time_pdf(dz)
 
         return np.trapz(dz**2 * P_Dz, dz)
 
     def plateau_C4(self):
 
-        dz = np.linspace(-5e-6, 5e-6, 10000)
+        dz = np.linspace(-5e-6, 5e-6, 1000)
         P_Dz = self.long_time_pdf(dz)
 
         return np.trapz(dz**4 * P_Dz, dz) - 3 * np.trapz(dz**2 * P_Dz, dz) ** 2
@@ -155,7 +156,7 @@ class Model:
     def C4_short_time(self, t, axis="x"):
         z = self.z_th
 
-        if axis == "x":
+        if axis == "x" or axis == "y":
             mean_D2 = np.trapz(self.Dx(z) ** 2 * self.P_0(z), z)
         else:
             mean_D2 = np.trapz(self.Dz(z) ** 2 * self.P_0(z), z)
@@ -166,3 +167,34 @@ class Model:
         z = z - self.z_0
 
         return 4e-21 * (self.B / (self.lD) * np.exp(-z / (self.lD)) - 1 / (self.lB))
+
+    ### Getter and setter in order to compute D0 and lB while
+
+    @property
+    def a(self):
+        return self._a
+
+    @a.setter
+    def a(self, a):
+        self._a = a
+        self.D0 = 4e-21 / (6 * np.pi * self.eta * a)
+        self.lB = 4e-21 / (4 / 3 * np.pi * self.Drho * 9.81 * a**3)
+
+    @property
+    def Drho(self):
+        return self._Drho
+
+    @Drho.setter
+    def Drho(self, Drho):
+        self._Drho = Drho
+        self.lB = 4e-21 / (4 / 3 * np.pi * Drho * 9.81 * self.a**3)
+
+
+    @property
+    def eta(self):
+        return self._eta
+
+    @eta.setter
+    def eta(self, eta):
+        self._eta = eta
+        self.D0 = 4e-21 / (6 * np.pi * eta * self.a)
