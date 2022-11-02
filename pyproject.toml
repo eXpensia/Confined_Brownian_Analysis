@@ -1,0 +1,18 @@
+[project]
+name = "ConfinedBrownianAnalysis"
+version = "1.0.1"
+authors = [
+  { name="Maxime Lavaud", email="lavaudmaxime.ml@gmail.com" },
+]
+description = "A package to analyse 3D confined Borwnian trajectories"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/eXpensia/Confined_Brownian_Analysis"
+"Bug Tracker" = "https://github.com/eXpensia/Confined_Brownian_Analysis/issues"

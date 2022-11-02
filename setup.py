@@ -1,7 +1,10 @@
 from setuptools import setup
+from setuptools import find_packages
 
 setup(
     name='ConfinedBrownianAnalysis',
+    author="Maxime Lavaud",
+    author_email="lavaudmaxime.ml@gmail.com",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     install_requires=[
@@ -14,7 +17,5 @@ setup(
         'tqdm==4.64.1',
         'dill==0.3.5.1'
     ],
-    packages=[
-        'ConfinedBrownianAnalysis',
-    ],
+    packages=find_packages(),
 )
