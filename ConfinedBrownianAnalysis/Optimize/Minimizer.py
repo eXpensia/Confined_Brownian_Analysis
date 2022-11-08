@@ -178,8 +178,8 @@ class Minimizer:
                 self.analysis.z_D,
             )
         else:
-            I1 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_diffusion[0])[0])
-            I2 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_diffusion[1])[0])
+            I1 = int(np.argwhere(self.analysis.z_D > self.range_diffusion[0])[0])
+            I2 = int(np.argwhere(self.analysis.z_D > self.range_diffusion[1])[0])
 
             Dx, Dy, Dz, z_D = (
                 self.analysis.Dx[I1:I2],

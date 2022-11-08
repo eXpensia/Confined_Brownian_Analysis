@@ -1,6 +1,6 @@
 [project]
 name = "ConfinedBrownianAnalysis"
-version = "1.0.1"
+version = "1.0.3"
 authors = [
   { name="Maxime Lavaud", email="lavaudmaxime.ml@gmail.com" },
 ]
