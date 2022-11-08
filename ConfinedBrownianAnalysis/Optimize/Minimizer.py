@@ -72,7 +72,7 @@ class Minimizer:
             self._range_diffusion = range_diffusion
 
         if range_Peq == None:
-            self._range_Peq = analysis.range_D
+            self._range_Peq = analysis.range_pdf
         else:
             self._range_Peq = range_diffusion
 
@@ -178,8 +178,8 @@ class Minimizer:
                 self.analysis.z_D,
             )
         else:
-            I1 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_D[0])[0])
-            I2 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_D[1])[0])
+            I1 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_diffusion[0])[0])
+            I2 = int(np.argwhere(self.analysis.z_D * self.dt > self.range_diffusion[1])[0])
 
             Dx, Dy, Dz, z_D = (
                 self.analysis.Dx[I1:I2],
